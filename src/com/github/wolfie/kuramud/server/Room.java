@@ -1,160 +1,330 @@
 package com.github.wolfie.kuramud.server;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.blackboard.ResetListener;
 import com.github.wolfie.kuramud.server.blackboard.TickListener;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public abstract class Room implements ResetListener, TickListener {
-	
-	private final Paths paths;
-	private final Set<PlayerCharacter> playersInRoom = Collections
-			.synchronizedSet(new HashSet<PlayerCharacter>());
-	
-	private Set<NonPlayerCharacter> npcs = Collections
-			.synchronizedSet(new HashSet<NonPlayerCharacter>());
-	
-	private final Map<Class<? extends NonPlayerCharacter>, Integer> mobsThatShouldBeInRoom = Maps
-			.newHashMap();
-	
-	protected Room(final Paths paths) {
-		this.paths = paths;
-		Core.BLACKBOARD.addListener(this);
-	}
-	
-	public Room(final Direction direction, final Class<? extends Room> roomClass) {
-		this(new Paths.Builder().put(direction, roomClass).build());
-	}
-	
-	abstract public String getName();
-	
-	abstract public String getShortDescription();
-	
-	abstract public String getLongDescription();
-	
-	/**
-	 * Output a string to this room.
-	 * <p/>
-	 * Equivalent to calling {@link Core#output(Room, String)} with this object as
-	 * the <code>Room</code> argument.
-	 * 
-	 * @param string
-	 */
-	public final void output(final String string) {
-		Core.output(this, string);
-	}
-	
-	public final void teleportAway(final PlayerCharacter player) {
-		Core.output(this, player + " disappears into a puff of smoke.");
-		player.setCurrentRoom(null);
-		playersInRoom.remove(player);
-	}
-	
-	public final void teleportInto(final PlayerCharacter player) {
-		Core.output(this, player + " appears from a puff of smoke.");
-		player.setCurrentRoom(this);
-		player.lookAt(this);
-		playersInRoom.add(player);
-	}
-	
-	protected final void spawn(final NonPlayerCharacter mob) {
-		Core.output(this, mob + " appears from a puff of smoke.");
-		mob.setCurrentRoom(this);
-		npcs.add(mob);
-	}
-	
-	protected final void destroy(final NonPlayerCharacter mob) {
-		if (npcs.contains(mob)) {
-			Core.output(this, mob
-					+ " disintegrates into a cloud of colorful butterflies");
-			npcs.remove(mob);
-		}
-	}
-	
-	public final String getRoomString(final PlayerCharacter looker) {
-		String desc = getName() + "\n" + getLongDescription() + "\n";
-		desc += paths.toString() + "\n";
-		
-		final Set<Character> players = new HashSet<Character>(
-				playersInRoom);
-		players.remove(looker);
-		players.addAll(npcs);
-		
-		if (!players.isEmpty()) {
-			desc += "You also see:\n" + Util.join(players, "\n") + "\n";
-		} else {
-			desc += "There's nothing else here.\n";
-		}
-		
-		return desc;
-	}
-	
-	protected void mobInRoom(final int amount,
-			final Class<? extends NonPlayerCharacter> mobClass) {
-		mobsThatShouldBeInRoom.put(mobClass, amount);
-	}
-	
-	protected void reset() {
-		final Set<NonPlayerCharacter> newNpcs = Sets.newHashSet();
-		
-		for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : Maps
-				.newHashMap(mobsThatShouldBeInRoom)
-				.entrySet()) {
-			int amount = entry.getValue();
-			final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
-			
-			for (final NonPlayerCharacter mobInRoom : npcs) {
-				if (mobClass.equals(mobInRoom.getClass())) {
-					amount--;
-					mobsThatShouldBeInRoom.put(mobClass, amount);
-					newNpcs.add(mobInRoom);
-					npcs.remove(mobInRoom);
-				}
-				if (amount == 0) {
-					continue;
-				}
-			}
-		}
-		
-		if (!npcs.isEmpty()) {
-			for (final NonPlayerCharacter mob : npcs) {
-				destroy(mob);
-			}
-		}
-		
-		npcs = newNpcs;
-		
-		if (!mobsThatShouldBeInRoom.isEmpty()) {
-			try {
-				for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : mobsThatShouldBeInRoom
-						.entrySet()) {
-					final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
-					final int amount = entry.getValue();
-					for (int i = 0; i < amount; i++) {
-						spawn(mobClass.newInstance());
-					}
-				}
-			} catch (final SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (final IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (final InstantiationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (final IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			mobsThatShouldBeInRoom.clear();
-		}
-	}
+
+  private final Paths paths;
+  private final Set<PlayerCharacter> playersInRoom = Collections
+      .synchronizedSet(new HashSet<PlayerCharacter>());
+
+  /**
+   * A map of mob keywords to the instances of the mobs.
+   * <p/>
+   * Restriction: only one type of mobs may be in a room with the same keyword.
+   * <p/>
+   * This makes it easy to find the mobs by their keywords. One mob can respond
+   * to many keywords, and there can be many mobs of a kind, ordered in a List.
+   */
+  private final ConcurrentMap<String, List<NonPlayerCharacter>> mobs = Maps
+      .newConcurrentMap();
+
+  private final Map<Class<? extends NonPlayerCharacter>, Integer> mobsThatShouldBeAddedToRoom = Maps
+      .newHashMap();
+
+  private Set<NonPlayerCharacter> homeMobs = null;
+
+  protected Room(final Paths paths) {
+    this.paths = paths;
+    Core.BLACKBOARD.addListener(this);
+  }
+
+  public Room(final Direction direction, final Class<? extends Room> roomClass) {
+    this(new Paths.Builder().put(direction, roomClass).build());
+  }
+
+  abstract public String getName();
+
+  abstract public String getShortDescription();
+
+  abstract public String getLongDescription();
+
+  /**
+   * Output a string to this room.
+   * <p/>
+   * Equivalent to calling {@link Core#output(Room, String)} with this object as
+   * the <code>Room</code> argument.
+   * 
+   * @param string
+   */
+  public final void output(final String string) {
+    Core.output(this, string);
+  }
+
+  public final void teleportAway(final PlayerCharacter player) {
+    Core.output(this, player + " disappears into a puff of smoke.");
+    player.setCurrentRoom(null);
+    playersInRoom.remove(player);
+  }
+
+  public final void teleportInto(final PlayerCharacter player) {
+    Core.output(this, player + " appears from a puff of smoke.");
+    player.setCurrentRoom(this);
+    player.look();
+    playersInRoom.add(player);
+  }
+
+  protected final void spawn(final NonPlayerCharacter mob) {
+    Core.output(this, mob + " appears from a puff of smoke.");
+    add(mob);
+  }
+
+  private void add(final NonPlayerCharacter mob) {
+    List<NonPlayerCharacter> list = null;
+
+    /*
+     * Find the list where the same kind of mobs exist, and add the new one
+     * there
+     */
+    if (list == null) {
+      final List<NonPlayerCharacter> mobsOfKindInRoom = mobs.get(mob
+          .getKeywords()[0]);
+
+      if (mobsOfKindInRoom != null) {
+        list = mobsOfKindInRoom;
+      } else {
+        list = Lists.newArrayList();
+      }
+
+      mob.setCurrentRoom(this);
+      list.add(mob);
+    }
+
+    for (final String mobKeyword : mob.getKeywords()) {
+
+      // make sure that that one list is used for each keyword for that same
+      // type of mobs. This is unnecessary to do for other times than for the
+      // first instance of a mob type, but it doesn't really hurt much either.
+      // OPTIMIZATION OPPORTUNITY: really make sure that this is not done
+      // unnecessarily.
+
+      mobs.put(mobKeyword, list);
+    }
+  }
+
+  protected final void destroy(final NonPlayerCharacter mob) {
+    final boolean success = remove(mob);
+    if (success) {
+      Core.output(this, mob
+          + " disintegrates into a cloud of colorful butterflies");
+    }
+  }
+
+  /**
+   * 
+   * @param mob
+   * @return <code>true</code> if, and only if, the given mob was removed from
+   *         the room.
+   */
+  private boolean remove(final NonPlayerCharacter mob) {
+    final String mobKeyword = mob.getKeywords()[0];
+    final List<NonPlayerCharacter> mobList = mobs.get(mobKeyword);
+    if (mobList != null) {
+      final boolean success = mobList.remove(mob);
+      if (success) {
+        mob.setCurrentRoom(null);
+      }
+      return success;
+    } else {
+      return false;
+    }
+  }
+
+  public final String getRoomString(final PlayerCharacter looker) {
+    String desc = getName() + "\n" + getLongDescription() + "\n";
+    desc += paths.toString() + "\n";
+
+    final Set<Character> players = new HashSet<Character>(playersInRoom);
+    players.remove(looker);
+
+    for (final Collection<NonPlayerCharacter> mobs : this.mobs.values()) {
+      players.addAll(mobs);
+    }
+
+    if (!players.isEmpty()) {
+      desc += "You also see:\n" + Util.join(players, "\n") + "\n";
+    } else {
+      desc += "There's nothing else here.\n";
+    }
+
+    return desc;
+  }
+
+  protected void mobInRoom(final int amount,
+      final Class<? extends NonPlayerCharacter> mobClass) {
+    mobsThatShouldBeAddedToRoom.put(mobClass, amount);
+  }
+
+  protected void reset() {
+    if (homeMobs == null) {
+      firstReset();
+    } else {
+      subsequentReset();
+    }
+  }
+
+  private void firstReset() {
+    homeMobs = Sets.newHashSet();
+
+    try {
+      for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : mobsThatShouldBeAddedToRoom
+          .entrySet()) {
+        final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
+        final int amount = entry.getValue();
+
+        for (int i = 0; i < amount; i++) {
+          final NonPlayerCharacter mob = mobClass.newInstance();
+          add(mob);
+        }
+      }
+    } catch (final IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (final InstantiationException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void subsequentReset() {
+    for (final NonPlayerCharacter mob : homeMobs) {
+      if (mob.getCurrentRoom() != this) {
+        mob.getCurrentRoom().destroy(mob);
+        spawn(mob);
+      }
+    }
+  }
+
+  /**
+   * Checks whether a player may leave in a certain direction.
+   * <p/>
+   * <b>Note:</b> This method will notify the player of the reason to why that
+   * player can't go there.
+   * 
+   * @param direction
+   * @param player
+   * @return
+   */
+  public boolean checkAccessibility(final Direction direction,
+      final PlayerCharacter player) {
+    final boolean success = (getRoomInDirection(direction) != null);
+    if (!success) {
+      Core.output(player, "You can't find a way to go " + direction + ".");
+    }
+    return success;
+  }
+
+  public boolean checkMayLeave(final Direction direction,
+      final PlayerCharacter player) {
+    return true;
+  }
+
+  public boolean checkMayEnter(final Direction direction,
+      final PlayerCharacter player) {
+    return true;
+  }
+
+  public Room getRoomInDirection(final Direction direction) {
+    return Core.getRoomInstance(paths.getRoomInDirection(direction));
+  }
+
+  public boolean remove(final PlayerCharacter player) {
+    final boolean success = playersInRoom.remove(player);
+    if (success) {
+      player.setCurrentRoom(null);
+    }
+    return success;
+  }
+
+  public boolean add(final PlayerCharacter player) {
+    final boolean success = playersInRoom.add(player);
+    if (success) {
+      player.setCurrentRoom(this);
+    }
+    return success;
+  }
+
+  // final Set<NonPlayerCharacter> newNpcs = Sets.newHashSet();
+  //
+  // // convert the existing mobs into a more compatible/comparable format
+  // final Map<Class<? extends NonPlayerCharacter>, Integer>
+  // mobsThatAreCurrentlyInRoom = Maps
+  // .newHashMap();
+  //
+  // for (final Collection<NonPlayerCharacter> mobList : mobs.values()) {
+  // /*
+  // * OPTIMIZATION OPPORTUINTY: this loop does unnecessary work if the same
+  // * mob type is represented by the same keyword.
+  // */
+  // final NonPlayerCharacter mob = mobList.iterator().next();
+  // mobsThatAreCurrentlyInRoom.put(mob.getClass(), mobList.size());
+  // }
+  //
+  // for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : Maps
+  // .newHashMap(mobsThatShouldBeAddedToRoom).entrySet()) {
+  // final int amount = entry.getValue();
+  // final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
+  //
+  //
+  //
+  // // for (final NonPlayerCharacter mobInRoom : mobs.values()) {
+  // // if (mobClass.equals(mobInRoom.getClass())) {
+  // // amount--;
+  // // mobsThatShouldBeInRoom.put(mobClass, amount);
+  // // newNpcs.add(mobInRoom);
+  // // mobs.remove(mobInRoom);
+  // // }
+  // // if (amount == 0) {
+  // // continue;
+  // // }
+  // // }
+  // }
+  //
+  // if (!mobs.isEmpty()) {
+  // for (final NonPlayerCharacter mob : mobs) {
+  // destroy(mob);
+  // }
+  // }
+  //
+  // mobs = newNpcs;
+  //
+  // if (!mobsThatShouldBeAddedToRoom.isEmpty()) {
+  // try {
+  // for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry :
+  // mobsThatShouldBeAddedToRoom
+  // .entrySet()) {
+  // final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
+  // final int amount = entry.getValue();
+  // for (int i = 0; i < amount; i++) {
+  // spawn(mobClass.newInstance());
+  // }
+  // }
+  // } catch (final SecurityException e) {
+  // // TODO Auto-generated catch block
+  // e.printStackTrace();
+  // } catch (final IllegalArgumentException e) {
+  // // TODO Auto-generated catch block
+  // e.printStackTrace();
+  // } catch (final InstantiationException e) {
+  // // TODO Auto-generated catch block
+  // e.printStackTrace();
+  // } catch (final IllegalAccessException e) {
+  // // TODO Auto-generated catch block
+  // e.printStackTrace();
+  // }
+  // mobsThatShouldBeAddedToRoom.clear();
+  // }
+  // }
 }
