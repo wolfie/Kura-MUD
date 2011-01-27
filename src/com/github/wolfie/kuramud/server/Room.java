@@ -9,9 +9,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.blackboard.ResetListener;
 import com.github.wolfie.kuramud.server.blackboard.TickListener;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -40,7 +40,6 @@ public abstract class Room implements ResetListener, TickListener {
 
   protected Room(final Paths paths) {
     this.paths = paths;
-    Core.BLACKBOARD.addListener(this);
   }
 
   public Room(final Direction direction, final Class<? extends Room> roomClass) {
@@ -156,7 +155,7 @@ public abstract class Room implements ResetListener, TickListener {
     }
 
     if (!players.isEmpty()) {
-      desc += "You also see:\n" + Util.join(players, "\n") + "\n";
+      desc += "You also see:\n" + Joiner.on("\n").join(players) + "\n";
     } else {
       desc += "There's nothing else here.\n";
     }
@@ -256,75 +255,29 @@ public abstract class Room implements ResetListener, TickListener {
     return success;
   }
 
-  // final Set<NonPlayerCharacter> newNpcs = Sets.newHashSet();
-  //
-  // // convert the existing mobs into a more compatible/comparable format
-  // final Map<Class<? extends NonPlayerCharacter>, Integer>
-  // mobsThatAreCurrentlyInRoom = Maps
-  // .newHashMap();
-  //
-  // for (final Collection<NonPlayerCharacter> mobList : mobs.values()) {
-  // /*
-  // * OPTIMIZATION OPPORTUINTY: this loop does unnecessary work if the same
-  // * mob type is represented by the same keyword.
-  // */
-  // final NonPlayerCharacter mob = mobList.iterator().next();
-  // mobsThatAreCurrentlyInRoom.put(mob.getClass(), mobList.size());
-  // }
-  //
-  // for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : Maps
-  // .newHashMap(mobsThatShouldBeAddedToRoom).entrySet()) {
-  // final int amount = entry.getValue();
-  // final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
-  //
-  //
-  //
-  // // for (final NonPlayerCharacter mobInRoom : mobs.values()) {
-  // // if (mobClass.equals(mobInRoom.getClass())) {
-  // // amount--;
-  // // mobsThatShouldBeInRoom.put(mobClass, amount);
-  // // newNpcs.add(mobInRoom);
-  // // mobs.remove(mobInRoom);
-  // // }
-  // // if (amount == 0) {
-  // // continue;
-  // // }
-  // // }
-  // }
-  //
-  // if (!mobs.isEmpty()) {
-  // for (final NonPlayerCharacter mob : mobs) {
-  // destroy(mob);
-  // }
-  // }
-  //
-  // mobs = newNpcs;
-  //
-  // if (!mobsThatShouldBeAddedToRoom.isEmpty()) {
-  // try {
-  // for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry :
-  // mobsThatShouldBeAddedToRoom
-  // .entrySet()) {
-  // final Class<? extends NonPlayerCharacter> mobClass = entry.getKey();
-  // final int amount = entry.getValue();
-  // for (int i = 0; i < amount; i++) {
-  // spawn(mobClass.newInstance());
-  // }
-  // }
-  // } catch (final SecurityException e) {
-  // // TODO Auto-generated catch block
-  // e.printStackTrace();
-  // } catch (final IllegalArgumentException e) {
-  // // TODO Auto-generated catch block
-  // e.printStackTrace();
-  // } catch (final InstantiationException e) {
-  // // TODO Auto-generated catch block
-  // e.printStackTrace();
-  // } catch (final IllegalAccessException e) {
-  // // TODO Auto-generated catch block
-  // e.printStackTrace();
-  // }
-  // mobsThatShouldBeAddedToRoom.clear();
-  // }
-  // }
+  public void look(final String argument, final PlayerCharacter lookingPlayer) {
+    final List<NonPlayerCharacter> mobs = this.mobs.get(argument);
+    if (mobs != null && !mobs.isEmpty()) {
+      lookingPlayer.output(mobs.get(0).getLongDescription());
+      if (mobs.size() > 1) {
+        lookingPlayer.output("There's " + mobs.size() + " of them here.");
+      }
+    } else {
+      lookingPlayer.output("You can't find it.");
+    }
+  }
+
+  public void look(final Direction direction,
+      final PlayerCharacter lookingPlayer) {
+    final Room room = getRoomInDirection(direction);
+    if (room != null) {
+      lookingPlayer.output(room.getShortDescription());
+    } else {
+      lookingPlayer.output("There's nothing in that direction.");
+    }
+  }
+
+  public void say(final PlayerCharacter player, final String arguments) {
+    output(player + " says: " + arguments);
+  }
 }

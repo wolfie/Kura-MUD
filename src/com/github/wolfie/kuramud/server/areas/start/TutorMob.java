@@ -9,6 +9,6 @@ public class TutorMob extends NonPlayerCharacter {
 
   @Override
   public String getLongDescription() {
-    return "The tutor looks very knowledgeable and kind. He could probably beat your ass if he wanted to.";
+    return "The tutor looks very knowledgeable and kind. He could probably kick your ass, if he wanted to.";
   }
 }

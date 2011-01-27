@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.github.wolfie.blackboard.Blackboard;
+import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.EasternRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.NorthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.SouthernRoom;
@@ -47,14 +48,14 @@ public class Core extends Thread {
 
   private static final RoomInstances ROOM_INSTANCES = new RoomInstances();
 
-  public static final Blackboard BLACKBOARD = new Blackboard();
-  private static Core SINGLETON = new Core();
+  private static final Blackboard BLACKBOARD = new Blackboard();
+  private final static Core SINGLETON = new Core();
 
   private static final Class<? extends Room> START_ROOM = StartRoom.class;
   private static final Set<PlayerCharacter> PLAYERS_ONLINE = Collections
       .synchronizedSet(new HashSet<PlayerCharacter>());
 
-  private static final long TICK_LENGTH_MILLIS = 5000;
+  private static final long TICK_LENGTH_MILLIS = 20 * 1000;
   private static final int TICKS_BEFORE_RESET = 20;
 
   private boolean running = false;
@@ -102,14 +103,19 @@ public class Core extends Thread {
 
   private static void initRoomInstances() {
     ROOM_INSTANCES.clear();
-    ROOM_INSTANCES.add(new StartRoom());
-    ROOM_INSTANCES.add(new NorthernRoom());
-    ROOM_INSTANCES.add(new SouthernRoom());
-    ROOM_INSTANCES.add(new EasternRoom());
-    ROOM_INSTANCES.add(new WesternRoom());
+    add(new StartRoom());
+    add(new NorthernRoom());
+    add(new SouthernRoom());
+    add(new EasternRoom());
+    add(new WesternRoom());
   }
 
-  private static void resetAllRooms() {
+  private static void add(final Room room) {
+    ROOM_INSTANCES.add(room);
+    BLACKBOARD.addListener(room);
+  }
+
+  public static void resetAllRooms() {
     BLACKBOARD.fire(new ResetEvent());
   }
 
@@ -209,6 +215,27 @@ public class Core extends Thread {
   public static void bootstrap() {
     if (!isRunning()) {
       SINGLETON.start();
+    }
+  }
+
+  public static void look(final String argument, final Room currentRoom,
+      final PlayerCharacter lookingPlayer) {
+    if (argument == null || argument.isEmpty()) {
+      lookingPlayer.look();
+    } else if (Util.is(argument, "n", "north")) {
+      currentRoom.look(Direction.NORTH, lookingPlayer);
+    } else if (Util.is(argument, "s", "south")) {
+      currentRoom.look(Direction.SOUTH, lookingPlayer);
+    } else if (Util.is(argument, "e", "east")) {
+      currentRoom.look(Direction.EAST, lookingPlayer);
+    } else if (Util.is(argument, "w", "west")) {
+      currentRoom.look(Direction.WEST, lookingPlayer);
+    } else if (Util.is(argument, "u", "up")) {
+      currentRoom.look(Direction.UP, lookingPlayer);
+    } else if (Util.is(argument, "d", "down")) {
+      currentRoom.look(Direction.DOWN, lookingPlayer);
+    } else {
+      currentRoom.look(argument, lookingPlayer);
     }
   }
 }

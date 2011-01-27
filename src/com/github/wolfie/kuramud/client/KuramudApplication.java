@@ -2,12 +2,12 @@ package com.github.wolfie.kuramud.client;
 
 import org.vaadin.artur.icepush.ICEPush;
 
+import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.Core;
 import com.github.wolfie.kuramud.server.Direction;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 import com.github.wolfie.kuramud.server.Room;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener;
-import com.github.wolfie.kuramud.server.blackboard.ResetListener;
 import com.vaadin.Application;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
@@ -36,39 +36,37 @@ public class KuramudApplication extends Application implements OutputListener {
       }
 
       final String trimmedCommand = command.trim();
+      Core.output(player, "> " + trimmedCommand);
 
-      Core.output(player, trimmedCommand);
+      final String[] split = trimmedCommand.split("\\s", 2);
+      final String mainCommand = split[0];
+      final String arguments;
 
-      if (is(trimmedCommand, "l", "look")) {
-        player.look();
-      } else if (is(trimmedCommand, "n", "north")) {
-        Core.move(player, Direction.NORTH);
-      } else if (is(trimmedCommand, "s", "south")) {
-        Core.move(player, Direction.SOUTH);
-      } else if (is(trimmedCommand, "w", "west")) {
-        Core.move(player, Direction.WEST);
-      } else if (is(trimmedCommand, "e", "east")) {
-        Core.move(player, Direction.EAST);
-      } else if (is(trimmedCommand, "!reset")) {
-        Core.BLACKBOARD.fire(new ResetListener.ResetEvent());
+      if (split.length > 1) {
+        arguments = split[1];
       } else {
-        Core.output(player, "Didn't understand you there...");
+        arguments = "";
+      }
+
+      if (Util.is(mainCommand, "l", "look")) {
+        player.look(arguments);
+      } else if (Util.is(mainCommand, "n", "north")) {
+        Core.move(player, Direction.NORTH);
+      } else if (Util.is(mainCommand, "s", "south")) {
+        Core.move(player, Direction.SOUTH);
+      } else if (Util.is(mainCommand, "w", "west")) {
+        Core.move(player, Direction.WEST);
+      } else if (Util.is(mainCommand, "e", "east")) {
+        Core.move(player, Direction.EAST);
+      } else if (Util.is(mainCommand, "!reset")) {
+        Core.resetAllRooms();
+      } else if (Util.is(mainCommand, "say")) {
+        player.getCurrentRoom().say(player, arguments);
+      } else {
+        Core.output(player, "Sorry, didn't understand you there...");
       }
 
       event.getProperty().setValue("");
-    }
-
-    public boolean is(final String command, final String... matches) {
-      if (matches == null || matches.length == 0) {
-        return false;
-      } else {
-        for (final String match : matches) {
-          if (match.equalsIgnoreCase(command)) {
-            return true;
-          }
-        }
-        return false;
-      }
     }
   }
 
@@ -81,6 +79,9 @@ public class KuramudApplication extends Application implements OutputListener {
     }
   }
 
+  private static final int TERMINAL_WIDTH = 70;
+
+  // ignore findbugs: this application isn't meant to be serializable.
   private final PlayerCharacter player = new PlayerCharacter();
   private final ICEPush push = new ICEPush();
 
@@ -107,6 +108,7 @@ public class KuramudApplication extends Application implements OutputListener {
     layout.addComponent(heading);
 
     canvas.setStyleName(Reindeer.LAYOUT_BLACK);
+    canvas.addStyleName("canvas");
     canvas.setSizeFull();
     canvas.getContent().setSizeUndefined();
     canvas.getContent().setStyleName(Reindeer.LAYOUT_BLACK);
@@ -149,18 +151,27 @@ public class KuramudApplication extends Application implements OutputListener {
     final PlayerCharacter player = event.getPlayer();
     final String output = event.getOutput();
 
-    if (room == null && player == null) {
-      print("[SCOPE:GLOBAL] " + output);
-    } else if (player == null && room == this.player.getCurrentRoom()) {
-      print("[SCOPE:ROOM] " + output);
-    } else if (room == null && player == this.player) {
-      print("[SCOPE:PLAYER] " + output);
+    if (isGlobalMsg(room, player) || isRoomMsg(room, player)
+        || isPlayerMsg(room, player)) {
+      print(output);
     }
   }
 
+  private boolean isPlayerMsg(final Room inRoom, final PlayerCharacter toPlayer) {
+    return inRoom == null && toPlayer == player;
+  }
+
+  private boolean isRoomMsg(final Room inRoom, final PlayerCharacter toPlayer) {
+    return inRoom != null && toPlayer == null
+        && inRoom == player.getCurrentRoom();
+  }
+
+  private boolean isGlobalMsg(final Room inRoom, final PlayerCharacter toPlayer) {
+    return inRoom == null && toPlayer == null;
+  }
+
   private void print(final String message) {
-    final Label output = new Label(message);
-    output.setStyleName("prompt");
+    final Label output = new Label(Util.outputWordWrap(message, TERMINAL_WIDTH));
     canvas.addComponent(output);
     getMainWindow().scrollIntoView(output);
     push.push();

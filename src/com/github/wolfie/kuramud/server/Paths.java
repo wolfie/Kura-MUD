@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.github.wolfie.kuramud.Util;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
@@ -42,7 +42,7 @@ public class Paths {
       return "There are no exits!";
     } else {
       Collections.sort(keySet, DIRECTION_ORDER);
-      return "Exits to " + Util.join(keySet, ", ");
+      return "Exits to " + Joiner.on(", ").join(keySet);
     }
   }
 

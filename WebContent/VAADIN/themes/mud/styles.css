@@ -1,6 +1,6 @@
 @IMPORT url("../reindeer/styles.css");
 
-.v-label-prompt {
+.canvas .v-label {
 	font-family: monospace;
 	white-space: pre;
 }
