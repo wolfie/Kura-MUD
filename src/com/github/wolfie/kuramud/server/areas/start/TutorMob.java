@@ -5,6 +5,9 @@ import com.github.wolfie.kuramud.server.NonPlayerCharacter;
 public class TutorMob extends NonPlayerCharacter {
   public TutorMob() {
     super("A tutor", "tutor");
+    setAttack(500);
+    setDefense(500);
+    setHealth(100000);
   }
 
   @Override

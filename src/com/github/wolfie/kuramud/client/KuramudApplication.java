@@ -62,6 +62,8 @@ public class KuramudApplication extends Application implements OutputListener {
         Core.resetAllRooms();
       } else if (Util.is(mainCommand, "say")) {
         player.getCurrentRoom().say(player, arguments);
+      } else if (Util.is(mainCommand, "attack", "a")) {
+        player.attack(arguments);
       } else {
         Core.output(player, "Sorry, didn't understand you there...");
       }

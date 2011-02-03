@@ -33,6 +33,8 @@ public class Paths {
     }
   };
 
+  public static final Paths NONE = new Paths();
+
   private final Map<Direction, Class<? extends Room>> paths = Maps.newHashMap();
 
   @Override

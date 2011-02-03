@@ -64,17 +64,28 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
     Core.output(this, string);
   }
 
-  public final void teleportAway(final PlayerCharacter player) {
-    Core.output(this, player + " disappears into a puff of smoke.");
-    player.setCurrentRoom(null);
-    playersInRoom.remove(player);
+  public final void teleportAway(final Character character) {
+    Core.output(this, character + " disappears into a puff of smoke.");
+    character.setCurrentRoom(null);
+
+    if (character instanceof PlayerCharacter) {
+      playersInRoom.remove(character);
+    } else {
+      remove((NonPlayerCharacter) character);
+    }
   }
 
-  public final void teleportInto(final PlayerCharacter player) {
-    Core.output(this, player + " appears from a puff of smoke.");
-    player.setCurrentRoom(this);
-    player.look();
-    playersInRoom.add(player);
+  public final void teleportInto(final Character character) {
+    Core.output(this, character + " appears from a puff of smoke.");
+    character.setCurrentRoom(this);
+
+    if (character instanceof PlayerCharacter) {
+      final PlayerCharacter player = (PlayerCharacter) character;
+      player.look();
+      playersInRoom.add(player);
+    } else {
+      add((NonPlayerCharacter) character);
+    }
   }
 
   protected final void spawn(final NonPlayerCharacter mob) {
@@ -168,13 +179,17 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
     mobsThatShouldBeAddedToRoom.put(mobClass, amount);
   }
 
-  protected void reset() {
+  @Override
+  public void worldReset(final WorldResetEvent event) {
+    reset();
     if (homeMobs == null) {
       firstReset();
     } else {
       subsequentReset();
     }
   }
+
+  protected abstract void reset();
 
   private void firstReset() {
     homeMobs = Sets.newHashSet();
@@ -236,7 +251,13 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
   }
 
   public Room getRoomInDirection(final Direction direction) {
-    return Core.getRoomInstance(paths.getRoomInDirection(direction));
+    final Class<? extends Room> roomInDirection = paths
+        .getRoomInDirection(direction);
+    if (roomInDirection != null) {
+      return Core.getRoomInstance(roomInDirection);
+    } else {
+      return null;
+    }
   }
 
   public boolean remove(final PlayerCharacter player) {
@@ -279,5 +300,18 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
 
   public void say(final PlayerCharacter player, final String arguments) {
     output(player + " says: " + arguments);
+  }
+
+  public NonPlayerCharacter getMob(final String arguments) {
+    final List<NonPlayerCharacter> mobs = this.mobs.get(arguments);
+    if (mobs != null && mobs.size() > 0) {
+      return mobs.get(0);
+    } else {
+      return null;
+    }
+  }
+
+  protected Set<PlayerCharacter> getPlayersInRoom() {
+    return Collections.unmodifiableSet(playersInRoom);
   }
 }

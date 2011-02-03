@@ -3,6 +3,9 @@ package com.github.wolfie.kuramud.server;
 public abstract class Character {
   private Room currentRoom;
   private final String name;
+  private int statAttack = 0;
+  private int statDefense = 0;
+  private int health = 10;
 
   public Character(final String name) {
     this.name = name;
@@ -25,5 +28,39 @@ public abstract class Character {
     return getShortDescription();
   }
 
+  public int getAttack() {
+    return statAttack;
+  }
+
+  public int getDefense() {
+    return statDefense;
+  }
+
+  public int getHealth() {
+    return health;
+  }
+
+  protected void setAttack(final int attack) {
+    statAttack = attack;
+  }
+
+  protected void setDefense(final int defense) {
+    statDefense = defense;
+  }
+
+  protected void setHealth(final int health) {
+    this.health = health;
+  }
+
   public abstract String getLongDescription();
+
+  public abstract void output(String string);
+
+  public void decreaseHealth(final int amount) {
+    health -= amount;
+  }
+
+  public boolean isAlive() {
+    return health > 0;
+  }
 }

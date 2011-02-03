@@ -20,9 +20,8 @@ public class StartRoom extends Room {
   }
 
   @Override
-  public void worldReset(final WorldResetEvent event) {
+  protected void reset() {
     mobInRoom(1, TutorMob.class);
-    reset();
   }
 
   @Override

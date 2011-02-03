@@ -1,6 +1,7 @@
 package com.github.wolfie.kuramud.server.areas.start;
 
 import com.github.wolfie.kuramud.server.Direction;
+import com.github.wolfie.kuramud.server.Paths;
 import com.github.wolfie.kuramud.server.Room;
 
 public abstract class NullRoom extends Room {
@@ -25,12 +26,18 @@ public abstract class NullRoom extends Room {
 
   public static class WesternRoom extends NullRoom {
     public WesternRoom() {
-      super(Direction.EAST, StartRoom.class);
+      super(new Paths.Builder()
+          .put(Direction.EAST, StartRoom.class)
+          .put(Direction.WEST, CombatRoom.class).build());
     }
   }
 
   public NullRoom(final Direction north, final Class<? extends Room> roomClass) {
     super(north, roomClass);
+  }
+
+  public NullRoom(final Paths paths) {
+    super(paths);
   }
 
   @Override
@@ -50,7 +57,7 @@ public abstract class NullRoom extends Room {
   }
 
   @Override
-  public void worldReset(final WorldResetEvent event) {
+  protected void reset() {
     // NOOP
   }
 

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.github.wolfie.blackboard.Blackboard;
 import com.github.wolfie.kuramud.Util;
+import com.github.wolfie.kuramud.server.areas.start.CombatRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.EasternRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.NorthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.SouthernRoom;
@@ -25,6 +26,7 @@ import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldResetListener.WorldResetEvent;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener.WorldTickEvent;
+import com.google.common.collect.Sets;
 
 public class Core {
 
@@ -71,9 +73,16 @@ public class Core {
 
         }
       } catch (final InterruptedException e) {
-        e.printStackTrace();
         cleanup();
-        interrupt();
+        final boolean wasRunning = running;
+        running = false;
+
+        if (wasRunning) {
+          e.printStackTrace();
+          interrupt();
+        }
+
+        return;
       }
     }
 
@@ -113,6 +122,8 @@ public class Core {
 
   private static final Ticker TICKER = new Ticker();
 
+  private static final Set<Combat> COMBATS = Sets.newHashSet();
+
   private Core() {
   }
 
@@ -127,6 +138,8 @@ public class Core {
     add(new SouthernRoom());
     add(new EasternRoom());
     add(new WesternRoom());
+    add(new CombatRoom());
+    add(new PurgatoryRoom());
   }
 
   private static void add(final Room room) {
@@ -168,10 +181,11 @@ public class Core {
     BLACKBOARD.removeListener(outputListener);
   }
 
-  public static void teleportPlayerTo(final PlayerCharacter player,
-      final Room room) {
-    player.getCurrentRoom().teleportAway(player);
-    room.teleportInto(player);
+  public static void teleportCharacterTo(final Character character,
+      final Class<? extends Room> roomClass) {
+    final Room room = getRoomInstance(roomClass);
+    character.getCurrentRoom().teleportAway(character);
+    room.teleportInto(character);
   }
 
   public static void login(final PlayerCharacter playerCharacter) {
@@ -191,7 +205,16 @@ public class Core {
   }
 
   public static Room getRoomInstance(final Class<? extends Room> roomClass) {
-    return ROOM_INSTANCES.get(roomClass);
+    if (roomClass == null) {
+      throw new IllegalArgumentException("non-null argument required");
+    }
+
+    final Room roomInstance = ROOM_INSTANCES.get(roomClass);
+    if (roomInstance != null) {
+      return roomInstance;
+    } else {
+      throw new IllegalStateException(roomClass + " has not been instantiated!");
+    }
   }
 
   public static void cleanup() {
@@ -265,5 +288,15 @@ public class Core {
     } else {
       currentRoom.look(argument, lookingPlayer);
     }
+  }
+
+  public static void add(final Combat combat) {
+    COMBATS.add(combat);
+    BLACKBOARD.addListener(combat);
+  }
+
+  public static void remove(final Combat combat) {
+    COMBATS.remove(combat);
+    BLACKBOARD.removeListener(combat);
   }
 }
