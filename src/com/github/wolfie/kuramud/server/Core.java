@@ -13,6 +13,7 @@ import com.github.wolfie.kuramud.server.areas.start.NullRoom.NorthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.SouthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.WesternRoom;
 import com.github.wolfie.kuramud.server.areas.start.StartRoom;
+import com.github.wolfie.kuramud.server.blackboard.CombatTickListener;
 import com.github.wolfie.kuramud.server.blackboard.CombatTickListener.CombatTickEvent;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener.OutputEvent;
@@ -43,15 +44,6 @@ public class Core {
 
     @Override
     public void run() {
-      BLACKBOARD.register(OutputListener.class, OutputEvent.class);
-      BLACKBOARD.register(PlayerLoginListener.class, PlayerLoginEvent.class);
-      BLACKBOARD.register(PlayerLogoutListener.class, PlayerLogoutEvent.class);
-      BLACKBOARD.register(WorldResetListener.class, WorldResetEvent.class);
-      BLACKBOARD.register(WorldTickListener.class, WorldTickEvent.class);
-
-      initRoomInstances();
-      resetAllRooms();
-
       running = true;
       try {
         while (running && !isInterrupted()) {
@@ -239,7 +231,17 @@ public class Core {
   }
 
   public static void bootstrap() {
-    if (!TICKER.isAlive()) {
+    if (!TICKER.running) {
+      BLACKBOARD.register(OutputListener.class, OutputEvent.class);
+      BLACKBOARD.register(PlayerLoginListener.class, PlayerLoginEvent.class);
+      BLACKBOARD.register(PlayerLogoutListener.class, PlayerLogoutEvent.class);
+      BLACKBOARD.register(WorldResetListener.class, WorldResetEvent.class);
+      BLACKBOARD.register(WorldTickListener.class, WorldTickEvent.class);
+      BLACKBOARD.register(CombatTickListener.class, CombatTickEvent.class);
+
+      initRoomInstances();
+      resetAllRooms();
+
       TICKER.start();
     }
   }
