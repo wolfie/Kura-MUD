@@ -13,18 +13,83 @@ import com.github.wolfie.kuramud.server.areas.start.NullRoom.NorthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.SouthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.WesternRoom;
 import com.github.wolfie.kuramud.server.areas.start.StartRoom;
+import com.github.wolfie.kuramud.server.blackboard.CombatTickListener.CombatTickEvent;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener.OutputEvent;
 import com.github.wolfie.kuramud.server.blackboard.PlayerLoginListener;
 import com.github.wolfie.kuramud.server.blackboard.PlayerLoginListener.PlayerLoginEvent;
 import com.github.wolfie.kuramud.server.blackboard.PlayerLogoutListener;
 import com.github.wolfie.kuramud.server.blackboard.PlayerLogoutListener.PlayerLogoutEvent;
-import com.github.wolfie.kuramud.server.blackboard.ResetListener;
-import com.github.wolfie.kuramud.server.blackboard.ResetListener.ResetEvent;
-import com.github.wolfie.kuramud.server.blackboard.TickListener;
-import com.github.wolfie.kuramud.server.blackboard.TickListener.TickEvent;
+import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
+import com.github.wolfie.kuramud.server.blackboard.WorldResetListener.WorldResetEvent;
+import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
+import com.github.wolfie.kuramud.server.blackboard.WorldTickListener.WorldTickEvent;
 
-public class Core extends Thread {
+public class Core {
+
+  private static class Ticker extends Thread {
+    private boolean running = false;
+
+    private static final long COMBAT_TICK_MILLIS = 5 * 1000; // 5sec
+    private static final long WORLD_TICK_MILLIS = 60 * 1000; // 1min
+    private static final long WORLD_RESET_MILLIS = 60 * 60 * 1000; // 1h
+
+    private long timeToWorldTick = WORLD_TICK_MILLIS;
+    private long timeToWorldReset = WORLD_RESET_MILLIS;
+
+    public Ticker() {
+      setDaemon(true);
+    }
+
+    @Override
+    public void run() {
+      BLACKBOARD.register(OutputListener.class, OutputEvent.class);
+      BLACKBOARD.register(PlayerLoginListener.class, PlayerLoginEvent.class);
+      BLACKBOARD.register(PlayerLogoutListener.class, PlayerLogoutEvent.class);
+      BLACKBOARD.register(WorldResetListener.class, WorldResetEvent.class);
+      BLACKBOARD.register(WorldTickListener.class, WorldTickEvent.class);
+
+      initRoomInstances();
+      resetAllRooms();
+
+      running = true;
+      try {
+        while (running && !isInterrupted()) {
+
+          /*
+           * OPTIMIZATION: all event object could be singleton objects, since
+           * there's no need to recreate the dummy objects each and every time.
+           */
+
+          Thread.sleep(COMBAT_TICK_MILLIS);
+          BLACKBOARD.fire(new CombatTickEvent());
+
+          timeToWorldTick -= COMBAT_TICK_MILLIS;
+          timeToWorldReset -= COMBAT_TICK_MILLIS;
+
+          if (timeToWorldTick <= 0) {
+            BLACKBOARD.fire(new WorldTickEvent());
+            timeToWorldTick = WORLD_TICK_MILLIS;
+          }
+
+          if (timeToWorldReset <= 0) {
+            BLACKBOARD.fire(new WorldResetEvent());
+            timeToWorldReset = WORLD_RESET_MILLIS;
+          }
+
+        }
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+        cleanup();
+        interrupt();
+      }
+    }
+
+    public void die() {
+      running = false;
+      interrupt();
+    }
+  }
 
   private static class RoomInstances {
     private final Map<Class<? extends Room>, Room> roomInstances = new HashMap<Class<? extends Room>, Room>();
@@ -49,56 +114,18 @@ public class Core extends Thread {
   private static final RoomInstances ROOM_INSTANCES = new RoomInstances();
 
   private static final Blackboard BLACKBOARD = new Blackboard();
-  private final static Core SINGLETON = new Core();
 
   private static final Class<? extends Room> START_ROOM = StartRoom.class;
   private static final Set<PlayerCharacter> PLAYERS_ONLINE = Collections
       .synchronizedSet(new HashSet<PlayerCharacter>());
 
-  private static final long TICK_LENGTH_MILLIS = 20 * 1000;
-  private static final int TICKS_BEFORE_RESET = 20;
-
-  private boolean running = false;
-
-  private int ticks = 0;
+  private static final Ticker TICKER = new Ticker();
 
   private Core() {
-    setDaemon(true);
-  }
-
-  @Override
-  public void run() {
-    BLACKBOARD.register(OutputListener.class, OutputEvent.class);
-    BLACKBOARD.register(PlayerLoginListener.class, PlayerLoginEvent.class);
-    BLACKBOARD.register(PlayerLogoutListener.class, PlayerLogoutEvent.class);
-    BLACKBOARD.register(ResetListener.class, ResetEvent.class);
-    BLACKBOARD.register(TickListener.class, TickEvent.class);
-
-    initRoomInstances();
-    resetAllRooms();
-
-    running = true;
-    try {
-      while (running && !isInterrupted()) {
-        Thread.sleep(TICK_LENGTH_MILLIS);
-        if (ticks++ < TICKS_BEFORE_RESET) {
-          Core.outputGlobal("You hear a tick.");
-          BLACKBOARD.fire(new TickEvent());
-        } else {
-          Core.outputGlobal("You notice everything simply reset.");
-          BLACKBOARD.fire(new ResetEvent());
-          ticks = 0;
-        }
-      }
-    } catch (final InterruptedException e) {
-      e.printStackTrace();
-      cleanup();
-      Thread.currentThread().interrupt();
-    }
   }
 
   public static boolean isRunning() {
-    return SINGLETON.running;
+    return TICKER.isAlive();
   }
 
   private static void initRoomInstances() {
@@ -116,7 +143,7 @@ public class Core extends Thread {
   }
 
   public static void resetAllRooms() {
-    BLACKBOARD.fire(new ResetEvent());
+    BLACKBOARD.fire(new WorldResetEvent());
   }
 
   public static Room getStartRoom() {
@@ -183,8 +210,7 @@ public class Core extends Thread {
     BLACKBOARD.clear();
     PLAYERS_ONLINE.clear();
     ROOM_INSTANCES.clear();
-    SINGLETON.running = false;
-    SINGLETON.interrupt();
+    TICKER.die();
   }
 
   public static void move(final PlayerCharacter player,
@@ -213,8 +239,8 @@ public class Core extends Thread {
   }
 
   public static void bootstrap() {
-    if (!isRunning()) {
-      SINGLETON.start();
+    if (!TICKER.isAlive()) {
+      TICKER.start();
     }
   }
 

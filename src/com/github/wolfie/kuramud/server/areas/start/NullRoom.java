@@ -50,12 +50,12 @@ public abstract class NullRoom extends Room {
   }
 
   @Override
-  public void reset(final ResetEvent event) {
+  public void worldReset(final WorldResetEvent event) {
     // NOOP
   }
 
   @Override
-  public void tick(final TickEvent event) {
+  public void worldTick(final WorldTickEvent event) {
     // NOOP
   }
 

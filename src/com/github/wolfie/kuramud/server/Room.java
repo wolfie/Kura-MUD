@@ -9,14 +9,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import com.github.wolfie.kuramud.server.blackboard.ResetListener;
-import com.github.wolfie.kuramud.server.blackboard.TickListener;
+import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
+import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public abstract class Room implements ResetListener, TickListener {
+public abstract class Room implements WorldResetListener, WorldTickListener {
 
   private final Paths paths;
   private final Set<PlayerCharacter> playersInRoom = Collections
