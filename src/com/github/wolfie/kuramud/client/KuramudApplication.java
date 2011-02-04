@@ -5,6 +5,7 @@ import org.vaadin.console.Console;
 
 import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.client.commands.admin.Reset;
+import com.github.wolfie.kuramud.client.commands.chat.Say;
 import com.github.wolfie.kuramud.client.commands.combat.Attack;
 import com.github.wolfie.kuramud.client.commands.environment.Look;
 import com.github.wolfie.kuramud.client.commands.movement.MoveEast;
@@ -94,6 +95,7 @@ public class KuramudApplication extends Application implements OutputListener {
         initCombatCommands();
         initEnvironmentCommands();
         initAdminCommans();
+        initChatCommands();
     }
 
     private void initMovementCommands() {
@@ -129,6 +131,11 @@ public class KuramudApplication extends Application implements OutputListener {
     private void initAdminCommans() {
         Reset reset = new Reset();
         gameConsole.addCommand("!reset", reset);
+    }
+
+    private void initChatCommands() {
+        Say say = new Say();
+        gameConsole.addCommand("say", say);
     }
 
     @Override

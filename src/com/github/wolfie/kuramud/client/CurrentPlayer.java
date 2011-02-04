@@ -11,8 +11,8 @@ public class CurrentPlayer implements TransactionListener {
      */
     private static final long serialVersionUID = 7586177412183324350L;
     private static ThreadLocal<CurrentPlayer> instance = new ThreadLocal<CurrentPlayer>();
-    private Application application;
-    private PlayerCharacter player;
+    private final Application application;
+    private final PlayerCharacter player;
 
     public CurrentPlayer(Application application) {
         this.application = application;
@@ -45,7 +45,7 @@ public class CurrentPlayer implements TransactionListener {
         if (application == null) {
             throw new IllegalArgumentException("Application may not be null");
         }
-        CurrentPlayer appSettings = new CurrentPlayer(application);
-        application.getContext().addTransactionListener(appSettings);
+        CurrentPlayer currentPlayer = new CurrentPlayer(application);
+        application.getContext().addTransactionListener(currentPlayer);
     }
 }
