@@ -21,5 +21,7 @@
 
     <inherits name="org.vaadin.artur.icepush.IcepushaddonWidgetset" />
 
-    <inherits name="com.github.wolfie.kuramud.client.widgetset.Kura_mudWidgetset" />
+    
+
+    <inherits name="org.vaadin.console.ConsoleWidgetset" />
 </module>
