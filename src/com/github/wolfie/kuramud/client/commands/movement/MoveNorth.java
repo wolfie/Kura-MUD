@@ -3,18 +3,24 @@ package com.github.wolfie.kuramud.client.commands.movement;
 import org.vaadin.console.Console;
 import org.vaadin.console.Console.Command;
 
-import com.github.wolfie.kuramud.client.CurrentPlayer;
 import com.github.wolfie.kuramud.server.Core;
 import com.github.wolfie.kuramud.server.Direction;
+import com.github.wolfie.kuramud.server.PlayerCharacter;
 
 public class MoveNorth implements Command {
 
   private static final long serialVersionUID = 7863446197204210772L;
 
+  private final PlayerCharacter player;
+
+  public MoveNorth(final PlayerCharacter player) {
+    this.player = player;
+  }
+
   @Override
   public Object execute(final Console console, final String[] argv)
       throws Exception {
-    Core.move(CurrentPlayer.getPlayer(), Direction.NORTH);
+    Core.move(player, Direction.NORTH);
     return null;
   }
 

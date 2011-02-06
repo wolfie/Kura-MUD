@@ -43,9 +43,10 @@ public class KuramudApplication extends Application implements OutputListener {
 
   private final Console gameConsole = new Console();
 
+  private final PlayerCharacter currentPlayer = new PlayerCharacter();
+
   @Override
   public void init() {
-    CurrentPlayer.initialize(this);
     final VerticalLayout layout = new VerticalLayout();
     layout.setStyleName(Reindeer.LAYOUT_BLACK);
     final Window mainWindow = new Window("Kura MUD", layout);
@@ -87,7 +88,7 @@ public class KuramudApplication extends Application implements OutputListener {
     }
 
     Core.addMudOutput(this);
-    Core.login(CurrentPlayer.getPlayer());
+    Core.login(currentPlayer);
   }
 
   private void initCommands() {
@@ -99,31 +100,31 @@ public class KuramudApplication extends Application implements OutputListener {
   }
 
   private void initMovementCommands() {
-    final MoveSouth south = new MoveSouth();
+    final MoveSouth south = new MoveSouth(currentPlayer);
     gameConsole.addCommand("south", south);
     gameConsole.addCommand("s", south);
 
-    final MoveNorth north = new MoveNorth();
+    final MoveNorth north = new MoveNorth(currentPlayer);
     gameConsole.addCommand("north", north);
     gameConsole.addCommand("n", north);
 
-    final MoveWest west = new MoveWest();
+    final MoveWest west = new MoveWest(currentPlayer);
     gameConsole.addCommand("west", west);
     gameConsole.addCommand("w", west);
 
-    final MoveEast east = new MoveEast();
+    final MoveEast east = new MoveEast(currentPlayer);
     gameConsole.addCommand("east", east);
     gameConsole.addCommand("e", east);
   }
 
   private void initCombatCommands() {
-    final Attack attack = new Attack();
+    final Attack attack = new Attack(currentPlayer);
     gameConsole.addCommand("attack", attack);
     gameConsole.addCommand("a", attack);
   }
 
   private void initEnvironmentCommands() {
-    final Look look = new Look();
+    final Look look = new Look(currentPlayer);
     gameConsole.addCommand("look", look);
     gameConsole.addCommand("l", look);
   }
@@ -134,43 +135,39 @@ public class KuramudApplication extends Application implements OutputListener {
   }
 
   private void initChatCommands() {
-    final Say say = new Say();
+    final Say say = new Say(currentPlayer);
     gameConsole.addCommand("say", say);
   }
 
   @Override
   public void close() {
-    Core.logout(CurrentPlayer.getPlayer());
+    Core.logout(currentPlayer);
     Core.removeMudOutput(this);
     super.close();
   }
 
   @Override
   public void output(final OutputEvent event) {
-
-    final Room room = event.getRoom();
-    final PlayerCharacter player = event.getPlayer();
     final String output = event.getOutput();
 
-    if (isGlobalMsg(room, player) || isRoomMsg(room, player)
-                || isPlayerMsg(room, player)) {
+    if (event.getOutputType().equals(OutputType.GLOBAL)) {
       print(output);
+      return;
     }
-  }
 
-  private boolean isPlayerMsg(final Room inRoom,
-            final PlayerCharacter toPlayer) {
-    return inRoom == null && toPlayer == CurrentPlayer.getPlayer();
-  }
+    final Room room = event.getRoom();
+    if (event.getOutputType().equals(OutputType.ROOM)
+        && room.equals(currentPlayer.getCurrentRoom())) {
+      print(output);
+      return;
+    }
 
-  private boolean isRoomMsg(final Room inRoom, final PlayerCharacter toPlayer) {
-    return inRoom != null && toPlayer == null
-                && inRoom == CurrentPlayer.getPlayer().getCurrentRoom();
-  }
-
-  private boolean isGlobalMsg(final Room inRoom,
-            final PlayerCharacter toPlayer) {
-    return inRoom == null && toPlayer == null;
+    final PlayerCharacter player = event.getPlayer();
+    if (event.getOutputType().equals(OutputType.PLAYER)
+        && player.equals(currentPlayer)) {
+      print(output);
+      return;
+    }
   }
 
   private void print(String message) {

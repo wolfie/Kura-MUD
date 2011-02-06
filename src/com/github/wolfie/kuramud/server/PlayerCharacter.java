@@ -23,6 +23,7 @@ public class PlayerCharacter extends Character {
     Core.look(arguments, getCurrentRoom(), this);
   }
 
+  @Override
   public void output(final String string) {
     Core.output(this, string);
   }
@@ -34,5 +35,10 @@ public class PlayerCharacter extends Character {
     } else {
       output("Nothing to kill here by that name.");
     }
+  }
+
+  @Override
+  public String toString() {
+    return getShortDescription();
   }
 }

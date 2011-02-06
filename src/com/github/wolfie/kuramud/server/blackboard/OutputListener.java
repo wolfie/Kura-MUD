@@ -6,10 +6,20 @@ import com.github.wolfie.kuramud.server.PlayerCharacter;
 import com.github.wolfie.kuramud.server.Room;
 
 public interface OutputListener extends Listener {
+  public enum OutputType {
+    GLOBAL, ROOM, PLAYER;
+
+    @Override
+    public String toString() {
+      return name();
+    };
+  }
+
   public class OutputEvent implements Event {
     private final String output;
     private final Room room;
     private final PlayerCharacter player;
+    private final OutputType outputType;
 
     public String getOutput() {
       return output;
@@ -23,22 +33,29 @@ public interface OutputListener extends Listener {
       this.room = room;
       this.output = output;
       player = null;
+      outputType = OutputType.ROOM;
     }
 
     public OutputEvent(final PlayerCharacter player, final String output) {
       this.player = player;
       this.output = output;
       room = null;
+      outputType = OutputType.PLAYER;
     }
 
     public OutputEvent(final String output) {
       this.output = output;
       player = null;
       room = null;
+      outputType = OutputType.GLOBAL;
     }
 
     public PlayerCharacter getPlayer() {
       return player;
+    }
+
+    public OutputType getOutputType() {
+      return outputType;
     }
   }
 
