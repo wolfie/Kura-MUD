@@ -27,155 +27,155 @@ import com.vaadin.ui.themes.Reindeer;
 @SuppressWarnings("serial")
 public class KuramudApplication extends Application implements OutputListener {
 
-    public class MyCloseListener implements CloseListener {
-        private static final long serialVersionUID = -4512074063527224588L;
-
-        @Override
-        public void windowClose(final CloseEvent e) {
-            close();
-        }
-    }
-
-    private static final int TERMINAL_WIDTH = 70;
-
-    // ignore findbugs: this application isn't meant to be serializable.
-    private final ICEPush push = new ICEPush();
-
-    private Console gameConsole = new Console();
+  public class MyCloseListener implements CloseListener {
+    private static final long serialVersionUID = -4512074063527224588L;
 
     @Override
-    public void init() {
-        CurrentPlayer.initialize(this);
-        final VerticalLayout layout = new VerticalLayout();
-        layout.setStyleName(Reindeer.LAYOUT_BLACK);
-        final Window mainWindow = new Window("Kura MUD", layout);
-        mainWindow.setScrollable(true);
-        mainWindow.setSizeFull();
-        mainWindow.getContent().setSizeFull();
-        mainWindow.setStyleName(Reindeer.WINDOW_BLACK);
-        setTheme("mud");
+    public void windowClose(final CloseEvent e) {
+      close();
+    }
+  }
 
-        setMainWindow(mainWindow);
-        mainWindow.addListener(new MyCloseListener());
+  private static final int TERMINAL_WIDTH = 70;
 
-        layout.addComponent(push);
+  // ignore findbugs: this application isn't meant to be serializable.
+  private final ICEPush push = new ICEPush();
 
-        final Label heading = new Label("Kura MUD!");
-        heading.setStyleName(Reindeer.LABEL_H1);
-        layout.addComponent(heading);
+  private final Console gameConsole = new Console();
 
-        gameConsole.setSizeFull();
-        gameConsole.setPs("}> ");
-        gameConsole.setCols(80);
-        gameConsole.setMaxBufferSize(20);
-        gameConsole.setGreeting("Welcome to Kura MUD");
-        gameConsole.reset();
-        gameConsole.focus();
+  @Override
+  public void init() {
+    CurrentPlayer.initialize(this);
+    final VerticalLayout layout = new VerticalLayout();
+    layout.setStyleName(Reindeer.LAYOUT_BLACK);
+    final Window mainWindow = new Window("Kura MUD", layout);
+    mainWindow.setScrollable(true);
+    mainWindow.setSizeFull();
+    mainWindow.getContent().setSizeFull();
+    mainWindow.setStyleName(Reindeer.WINDOW_BLACK);
+    setTheme("mud");
 
-        layout.addComponent(gameConsole);
-        layout.setExpandRatio(gameConsole, 1);
-        initCommands();
+    setMainWindow(mainWindow);
+    mainWindow.addListener(new MyCloseListener());
 
-        while (!Core.isRunning()) {
-            try {
-                Thread.sleep(1000);
-            } catch (final InterruptedException e) {
-                e.printStackTrace();
-                mainWindow.addComponent(new Label(e.toString()));
-                return;
-            }
-        }
+    layout.addComponent(push);
 
-        Core.addMudOutput(this);
-        Core.login(CurrentPlayer.getPlayer());
+    final Label heading = new Label("Kura MUD!");
+    heading.setStyleName(Reindeer.LABEL_H1);
+    layout.addComponent(heading);
+
+    gameConsole.setSizeFull();
+    gameConsole.setPs("}> ");
+    gameConsole.setCols(80);
+    gameConsole.setMaxBufferSize(20);
+    gameConsole.setGreeting("Welcome to Kura MUD");
+    gameConsole.reset();
+    gameConsole.focus();
+
+    layout.addComponent(gameConsole);
+    layout.setExpandRatio(gameConsole, 1);
+    initCommands();
+
+    while (!Core.isRunning()) {
+      try {
+        Thread.sleep(1000);
+      } catch (final InterruptedException e) {
+        e.printStackTrace();
+        mainWindow.addComponent(new Label(e.toString()));
+        return;
+      }
     }
 
-    private void initCommands() {
-        initMovementCommands();
-        initCombatCommands();
-        initEnvironmentCommands();
-        initAdminCommans();
-        initChatCommands();
-    }
+    Core.addMudOutput(this);
+    Core.login(CurrentPlayer.getPlayer());
+  }
 
-    private void initMovementCommands() {
-        MoveSouth south = new MoveSouth();
-        gameConsole.addCommand("south", south);
-        gameConsole.addCommand("s", south);
+  private void initCommands() {
+    initMovementCommands();
+    initCombatCommands();
+    initEnvironmentCommands();
+    initAdminCommans();
+    initChatCommands();
+  }
 
-        MoveNorth north = new MoveNorth();
-        gameConsole.addCommand("north", north);
-        gameConsole.addCommand("n", north);
+  private void initMovementCommands() {
+    final MoveSouth south = new MoveSouth();
+    gameConsole.addCommand("south", south);
+    gameConsole.addCommand("s", south);
 
-        MoveWest west = new MoveWest();
-        gameConsole.addCommand("west", west);
-        gameConsole.addCommand("w", west);
+    final MoveNorth north = new MoveNorth();
+    gameConsole.addCommand("north", north);
+    gameConsole.addCommand("n", north);
 
-        MoveEast east = new MoveEast();
-        gameConsole.addCommand("east", east);
-        gameConsole.addCommand("e", east);
-    }
+    final MoveWest west = new MoveWest();
+    gameConsole.addCommand("west", west);
+    gameConsole.addCommand("w", west);
 
-    private void initCombatCommands() {
-        Attack attack = new Attack();
-        gameConsole.addCommand("attack", attack);
-        gameConsole.addCommand("a", attack);
-    }
+    final MoveEast east = new MoveEast();
+    gameConsole.addCommand("east", east);
+    gameConsole.addCommand("e", east);
+  }
 
-    private void initEnvironmentCommands() {
-        Look look = new Look();
-        gameConsole.addCommand("look", look);
-        gameConsole.addCommand("l", look);
-    }
+  private void initCombatCommands() {
+    final Attack attack = new Attack();
+    gameConsole.addCommand("attack", attack);
+    gameConsole.addCommand("a", attack);
+  }
 
-    private void initAdminCommans() {
-        Reset reset = new Reset();
-        gameConsole.addCommand("!reset", reset);
-    }
+  private void initEnvironmentCommands() {
+    final Look look = new Look();
+    gameConsole.addCommand("look", look);
+    gameConsole.addCommand("l", look);
+  }
 
-    private void initChatCommands() {
-        Say say = new Say();
-        gameConsole.addCommand("say", say);
-    }
+  private void initAdminCommans() {
+    final Reset reset = new Reset();
+    gameConsole.addCommand("!reset", reset);
+  }
 
-    @Override
-    public void close() {
-        Core.logout(CurrentPlayer.getPlayer());
-        Core.removeMudOutput(this);
-        super.close();
-    }
+  private void initChatCommands() {
+    final Say say = new Say();
+    gameConsole.addCommand("say", say);
+  }
 
-    @Override
-    public void output(final OutputEvent event) {
+  @Override
+  public void close() {
+    Core.logout(CurrentPlayer.getPlayer());
+    Core.removeMudOutput(this);
+    super.close();
+  }
 
-        final Room room = event.getRoom();
-        final PlayerCharacter player = event.getPlayer();
-        final String output = event.getOutput();
+  @Override
+  public void output(final OutputEvent event) {
 
-        if (isGlobalMsg(room, player) || isRoomMsg(room, player)
+    final Room room = event.getRoom();
+    final PlayerCharacter player = event.getPlayer();
+    final String output = event.getOutput();
+
+    if (isGlobalMsg(room, player) || isRoomMsg(room, player)
                 || isPlayerMsg(room, player)) {
-            print(output);
-        }
+      print(output);
     }
+  }
 
-    private boolean isPlayerMsg(final Room inRoom,
+  private boolean isPlayerMsg(final Room inRoom,
             final PlayerCharacter toPlayer) {
-        return inRoom == null && toPlayer == CurrentPlayer.getPlayer();
-    }
+    return inRoom == null && toPlayer == CurrentPlayer.getPlayer();
+  }
 
-    private boolean isRoomMsg(final Room inRoom, final PlayerCharacter toPlayer) {
-        return inRoom != null && toPlayer == null
+  private boolean isRoomMsg(final Room inRoom, final PlayerCharacter toPlayer) {
+    return inRoom != null && toPlayer == null
                 && inRoom == CurrentPlayer.getPlayer().getCurrentRoom();
-    }
+  }
 
-    private boolean isGlobalMsg(final Room inRoom,
+  private boolean isGlobalMsg(final Room inRoom,
             final PlayerCharacter toPlayer) {
-        return inRoom == null && toPlayer == null;
-    }
+    return inRoom == null && toPlayer == null;
+  }
 
-    private void print(String message) {
-        message = Util.outputWordWrap(message, TERMINAL_WIDTH);
-        gameConsole.println(message);
-        push.push();
-    }
+  private void print(String message) {
+    message = Util.outputWordWrap(message, TERMINAL_WIDTH);
+    gameConsole.println(message);
+    push.push();
+  }
 }
