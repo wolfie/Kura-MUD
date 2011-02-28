@@ -4,3 +4,12 @@
 	font-family: monospace;
 	white-space: pre;
 }
+
+.red-highlight {
+	color: red;
+}
+
+.blue-highlight {
+	color: #8888ff;
+	font-weight: bold;
+}
