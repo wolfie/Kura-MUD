@@ -3,6 +3,7 @@ package com.github.wolfie.kuramud.client.commands.combat;
 import org.vaadin.console.Console;
 import org.vaadin.console.Console.Command;
 
+import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 
 public class Attack implements Command {
@@ -18,12 +19,7 @@ public class Attack implements Command {
     @Override
     public Object execute(final Console console, final String[] argv)
             throws Exception {
-        String arguments = "";
-        if (argv != null && argv.length > 0) {
-            for (int i = 1; i < argv.length; i++) {
-                arguments += argv[i];
-            }
-        }
+        String arguments = Util.argvToString(argv);
         player.attack(arguments);
         return null;
     }

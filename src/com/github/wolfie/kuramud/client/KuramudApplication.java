@@ -38,7 +38,6 @@ public class KuramudApplication extends Application implements OutputListener {
 
     private static final int TERMINAL_WIDTH = 70;
 
-    // ignore findbugs: this application isn't meant to be serializable.
     private final ICEPush push = new ICEPush();
 
     private final Console gameConsole = new Console();

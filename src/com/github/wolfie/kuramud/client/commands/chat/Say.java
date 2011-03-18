@@ -3,6 +3,7 @@ package com.github.wolfie.kuramud.client.commands.chat;
 import org.vaadin.console.Console;
 import org.vaadin.console.Console.Command;
 
+import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 
 public class Say implements Command {
@@ -18,13 +19,7 @@ public class Say implements Command {
     @Override
     public Object execute(final Console console, final String[] argv)
             throws Exception {
-        String message = "";
-        if (argv != null) {
-            for (int i = 1; i < argv.length; i++) {
-                message += argv[i] + " ";
-            }
-        }
-        player.getCurrentRoom().say(player, message);
+        player.getCurrentRoom().say(player, Util.argvToString(argv));
         return null;
     }
 
