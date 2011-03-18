@@ -2,6 +2,7 @@ package com.github.wolfie.kuramud;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -63,5 +64,17 @@ public class Util {
     	}
    	return arguments.toString();
   }
+  
+	public static String join(Iterable<?> set, String joiner) {
+		final StringBuilder sb = new StringBuilder();
+		final Iterator<?> i = set.iterator();
+		while (i.hasNext()) {
+			sb.append(i.next());
+			if (i.hasNext()) {
+				sb.append(joiner);
+			}
+		}
+		return sb.toString();
+	}
 
 }

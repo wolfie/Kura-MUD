@@ -1,7 +1,11 @@
 package com.github.wolfie.kuramud.client;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.vaadin.artur.icepush.ICEPush;
 import org.vaadin.console.Console;
+import org.vaadin.console.Console.Command;
 
 import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.client.commands.admin.Reset;
@@ -16,6 +20,7 @@ import com.github.wolfie.kuramud.server.Core;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 import com.github.wolfie.kuramud.server.Room;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener;
+import com.google.common.collect.HashMultimap;
 import com.vaadin.Application;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.VerticalLayout;
@@ -27,7 +32,50 @@ import com.vaadin.ui.themes.Reindeer;
 @SuppressWarnings("serial")
 public class KuramudApplication extends Application implements OutputListener {
 
-    public class MyCloseListener implements CloseListener {
+    private final class Help implements Command {
+
+		@Override
+		public Object execute(Console console, String[] argv) throws Exception {
+			if (argv.length < 2) {
+				return getUsage(console, argv);
+			}
+			
+			final String commandString = argv[1];
+			final Command commandObject = gameConsole.getCommand(commandString);
+			
+			String[] trimmedArgv = getRealArguments(argv);
+			return commandObject.getUsage(console, trimmedArgv);
+		}
+
+		private String[] getRealArguments(String[] argv) {
+			final int twoLess = argv.length - 2;
+			final String[] trimmedArgv = new String[twoLess];
+			System.arraycopy(argv, 2, trimmedArgv, 0, twoLess);
+			return trimmedArgv;
+		}
+
+		@Override
+		public String getUsage(Console console, String[] argv) {
+
+			final HashMultimap<Command, String> groupedCommands = HashMultimap.create();
+			for (String commandString : gameConsole.getCommands()) {
+				final Command commandObject = gameConsole.getCommand(commandString);
+				groupedCommands.put(commandObject, commandString);
+			}
+			
+			final StringBuilder sb = new StringBuilder();
+			sb.append("Available commands:\n");
+			
+			for (final Command commandObject : groupedCommands.keySet()) {
+				String joinedCommands = Util.join(groupedCommands.get(commandObject), ", ");
+				sb.append(joinedCommands+"\n");
+			}
+			return sb.toString();
+		}
+
+	}
+
+	public class MyCloseListener implements CloseListener {
         private static final long serialVersionUID = -4512074063527224588L;
 
         @Override
@@ -75,6 +123,7 @@ public class KuramudApplication extends Application implements OutputListener {
         gameConsole.setGreeting("Welcome to Kura MUD");
         gameConsole.reset();
         gameConsole.focus();
+        gameConsole.setHandler(new KuramudConsoleHandler());
 
         layout.addComponent(gameConsole);
         layout.setExpandRatio(gameConsole, 1);
@@ -95,6 +144,10 @@ public class KuramudApplication extends Application implements OutputListener {
     }
 
     private void initCommands() {
+    	final Help help = new Help();
+    	gameConsole.addCommand("help", help);
+    	gameConsole.addCommand("h", help);
+    	
         initMovementCommands();
         initCombatCommands();
         initEnvironmentCommands();
