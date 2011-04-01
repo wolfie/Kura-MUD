@@ -1,0 +1,28 @@
+enable project specific settings
+perform the selected actions on save
+format source code
+ - Format all lines
+organize imports
+
+Additional actions:
+
+Code Organizing
+ - Remove trailing whitespace: all lines
+
+Code Style
+ - Use blocks in if/while/for/do statements: always
+ - Convert for loops to enhanced
+ - Use modifier 'final' where possible: all checked
+
+Member Access
+ - Use 'this' quailifier for field accesses: only if necessary
+ - Use 'this' qualifier for method accesses: only if necessary
+ - Use declaring class as qualifier: Change all accesses through [both]
+
+Missing Code
+ - [check everything]
+ 
+Unnecessary Code
+ - Remove unused imports
+ - Remove unnecessary casts
+ - Remove unnecessary '$NON-NLS$' tags
