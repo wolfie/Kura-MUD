@@ -11,17 +11,23 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
+import com.github.wolfie.kuramud.server.item.Item;
+import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
+import com.github.wolfie.kuramud.server.item.RoomItemContainer;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public abstract class Room implements WorldResetListener, WorldTickListener {
+public abstract class Room implements WorldResetListener, WorldTickListener,
+    Displayable {
 
+  // @formatter:off
   private final Paths paths;
-  private final Set<PlayerCharacter> playersInRoom = Collections
-      .synchronizedSet(new HashSet<PlayerCharacter>());
+  private final Set<PlayerCharacter> playersInRoom = Collections.synchronizedSet(new HashSet<PlayerCharacter>());
+  private final RoomItemContainer items = new RoomItemContainer();
 
+  // @formatter:on
   /**
    * A map of mob keywords to the instances of the mobs.
    * <p/>
@@ -30,13 +36,15 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
    * This makes it easy to find the mobs by their keywords. One mob can respond
    * to many keywords, and there can be many mobs of a kind, ordered in a List.
    */
-  private final ConcurrentMap<String, List<NonPlayerCharacter>> mobs = Maps
-      .newConcurrentMap();
+  // @formatter:off
+  private final ConcurrentMap<String, List<NonPlayerCharacter>> mobs = Maps.newConcurrentMap();
 
-  private final Map<Class<? extends NonPlayerCharacter>, Integer> mobsThatShouldBeAddedToRoom = Maps
-      .newHashMap();
+  private final Map<Class<? extends NonPlayerCharacter>, Integer> mobsThatShouldBeAddedToRoom = Maps.newHashMap();
+  private final Map<Class<? extends Item>, Integer> itemsThatShouldBeAddedToRoom = Maps.newHashMap();
 
   private Set<NonPlayerCharacter> homeMobs = null;
+  private Set<Item> homeItems = null;
+  // @formatter:on
 
   protected Room(final Paths paths) {
     this.paths = paths;
@@ -47,10 +55,6 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
   }
 
   abstract public String getName();
-
-  abstract public String getShortDescription();
-
-  abstract public String getLongDescription();
 
   /**
    * Output a string to this room.
@@ -158,17 +162,21 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
     String desc = getName() + "\n" + getLongDescription() + "\n";
     desc += paths.toString() + "\n";
 
-    final Set<Character> players = new HashSet<Character>(playersInRoom);
-    players.remove(looker);
+    final Set<Character> characters = new HashSet<Character>(playersInRoom);
+    characters.remove(looker);
 
     for (final Collection<NonPlayerCharacter> mobs : this.mobs.values()) {
-      players.addAll(mobs);
+      characters.addAll(mobs);
     }
 
-    if (!players.isEmpty()) {
-      desc += "You also see:\n" + Joiner.on("\n").join(players) + "\n";
+    if (!characters.isEmpty()) {
+      desc += "You also see:\n" + Joiner.on("\n").join(characters) + "\n";
     } else {
       desc += "There's nothing else here.\n";
+    }
+
+    if (!items.isEmpty()) {
+      desc += "\nStuff lying on the floor:\n" + items.toString();
     }
 
     return desc;
@@ -177,6 +185,11 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
   protected void mobInRoom(final int amount,
       final Class<? extends NonPlayerCharacter> mobClass) {
     mobsThatShouldBeAddedToRoom.put(mobClass, amount);
+  }
+
+  protected void itemInRoom(final int amount,
+      final Class<? extends Item> itemClass) {
+    itemsThatShouldBeAddedToRoom.put(itemClass, amount);
   }
 
   @Override
@@ -193,6 +206,7 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
 
   private void firstReset() {
     homeMobs = Sets.newHashSet();
+    homeItems = Sets.newHashSet();
 
     try {
       for (final Entry<Class<? extends NonPlayerCharacter>, Integer> entry : mobsThatShouldBeAddedToRoom
@@ -205,10 +219,24 @@ public abstract class Room implements WorldResetListener, WorldTickListener {
           add(mob);
         }
       }
+
+      for (final Entry<Class<? extends Item>, Integer> entry : itemsThatShouldBeAddedToRoom
+          .entrySet()) {
+        final Class<? extends Item> itemClass = entry.getKey();
+        final int amount = entry.getValue();
+
+        for (int i = 0; i < amount; i++) {
+          final Item item = itemClass.newInstance();
+          items.put(item);
+        }
+      }
     } catch (final IllegalAccessException e) {
       e.printStackTrace();
     } catch (final InstantiationException e) {
       e.printStackTrace();
+    } catch (final OutOfCapacityException e) {
+      throw new RuntimeException("Error when adding initial items to room "
+          + this, e);
     }
   }
 

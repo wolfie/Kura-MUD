@@ -9,6 +9,7 @@ import com.github.wolfie.kuramud.client.commands.admin.Reset;
 import com.github.wolfie.kuramud.client.commands.chat.Say;
 import com.github.wolfie.kuramud.client.commands.combat.Attack;
 import com.github.wolfie.kuramud.client.commands.environment.Look;
+import com.github.wolfie.kuramud.client.commands.inventory.Inventory;
 import com.github.wolfie.kuramud.client.commands.movement.MoveEast;
 import com.github.wolfie.kuramud.client.commands.movement.MoveNorth;
 import com.github.wolfie.kuramud.client.commands.movement.MoveSouth;
@@ -153,6 +154,7 @@ public class KuramudApplication extends Application implements OutputListener {
     initEnvironmentCommands();
     initAdminCommans();
     initChatCommands();
+    initInventoryCommands();
   }
 
   private void initMovementCommands() {
@@ -193,6 +195,13 @@ public class KuramudApplication extends Application implements OutputListener {
   private void initChatCommands() {
     final Say say = new Say(currentPlayer);
     gameConsole.addCommand("say", say);
+  }
+
+  private void initInventoryCommands() {
+    final Inventory inventory = new Inventory(currentPlayer);
+    gameConsole.addCommand("i", inventory);
+    gameConsole.addCommand("inv", inventory);
+    gameConsole.addCommand("inventory", inventory);
   }
 
   @Override

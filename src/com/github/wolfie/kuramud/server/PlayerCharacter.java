@@ -1,8 +1,11 @@
 package com.github.wolfie.kuramud.server;
 
+import com.github.wolfie.kuramud.server.item.CharacterInventory;
+
 public class PlayerCharacter extends Character {
   public PlayerCharacter() {
-    super("Player " + System.currentTimeMillis());
+    super("Player " + System.currentTimeMillis(), CharacterInventory
+        .newWithCapacity(10));
     setAttack(2);
   }
 
@@ -40,5 +43,10 @@ public class PlayerCharacter extends Character {
   @Override
   public String toString() {
     return getShortDescription();
+  }
+
+  @Override
+  public String[] getKeywords() {
+    return new String[] { "player" };
   }
 }

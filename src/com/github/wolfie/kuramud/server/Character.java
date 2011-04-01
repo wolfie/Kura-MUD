@@ -1,6 +1,11 @@
 package com.github.wolfie.kuramud.server;
 
-public abstract class Character {
+import com.github.wolfie.kuramud.server.item.CharacterInventory;
+import com.github.wolfie.kuramud.server.item.Item;
+import com.github.wolfie.kuramud.server.item.ItemNotInContainerException;
+import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
+
+public abstract class Character implements Displayable, Targetable {
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -52,16 +57,25 @@ public abstract class Character {
     return true;
   }
 
-  private Room currentRoom;
   private final String name;
+  private final CharacterInventory inventory;
+
+  private Room currentRoom;
   private int statAttack = 0;
   private int statDefense = 0;
   private int health = 10;
 
-  public Character(final String name) {
+  public Character(final String name, final CharacterInventory inventory) {
     this.name = name;
+
+    if (inventory != null) {
+      this.inventory = inventory;
+    } else {
+      this.inventory = CharacterInventory.NULL;
+    }
   }
 
+  @Override
   public String getShortDescription() {
     return name;
   }
@@ -103,8 +117,6 @@ public abstract class Character {
     this.health = health;
   }
 
-  public abstract String getLongDescription();
-
   public abstract void output(String string);
 
   public void decreaseHealth(final int amount) {
@@ -113,5 +125,13 @@ public abstract class Character {
 
   public boolean isAlive() {
     return health > 0;
+  }
+
+  public void receive(final Item item) throws OutOfCapacityException {
+    inventory.put(item);
+  }
+
+  public void remove(final Item item) throws ItemNotInContainerException {
+    inventory.remove(item);
   }
 }

@@ -7,6 +7,7 @@ import com.github.wolfie.kuramud.server.areas.start.NullRoom.EasternRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.NorthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.SouthernRoom;
 import com.github.wolfie.kuramud.server.areas.start.NullRoom.WesternRoom;
+import com.github.wolfie.kuramud.server.item.Rock;
 
 public class StartRoom extends Room {
 
@@ -20,6 +21,7 @@ public class StartRoom extends Room {
   @Override
   protected void reset() {
     mobInRoom(1, TutorMob.class);
+    itemInRoom(1, Rock.class);
   }
 
   @Override
