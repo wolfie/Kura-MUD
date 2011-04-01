@@ -1,6 +1,6 @@
 <FindBugsFilter>
 	<Match>
-		<Class name="com.github.wolfie.kuramud.KuramudApplication"/>
-		<Bug code="SE_NO_SERIALVERSIONID"/>
+		<Class name="com.github.wolfie.kuramud.KuramudApplication" />
+		<Bug code="SE_NO_SERIALVERSIONID" />
 	</Match>
 </FindBugsFilter>
