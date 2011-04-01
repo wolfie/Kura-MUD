@@ -26,8 +26,7 @@ public abstract class NullRoom extends Room {
 
   public static class WesternRoom extends NullRoom {
     public WesternRoom() {
-      super(new Paths.Builder()
-          .put(Direction.EAST, StartRoom.class)
+      super(new Paths.Builder().put(Direction.EAST, StartRoom.class)
           .put(Direction.WEST, CombatRoom.class).build());
     }
   }

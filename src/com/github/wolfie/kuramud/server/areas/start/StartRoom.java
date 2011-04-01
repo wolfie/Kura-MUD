@@ -11,12 +11,10 @@ import com.github.wolfie.kuramud.server.areas.start.NullRoom.WesternRoom;
 public class StartRoom extends Room {
 
   public StartRoom() {
-    super(new Paths.Builder()
-        .put(Direction.NORTH, NorthernRoom.class)
+    super(new Paths.Builder().put(Direction.NORTH, NorthernRoom.class)
         .put(Direction.SOUTH, SouthernRoom.class)
         .put(Direction.EAST, EasternRoom.class)
-        .put(Direction.WEST, WesternRoom.class)
-        .build());
+        .put(Direction.WEST, WesternRoom.class).build());
   }
 
   @Override

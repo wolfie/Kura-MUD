@@ -118,7 +118,7 @@ public class Core {
 
   private static final Class<? extends Room> START_ROOM = StartRoom.class;
   private static final Set<PlayerCharacter> PLAYERS_ONLINE = Collections
-            .synchronizedSet(new HashSet<PlayerCharacter>());
+      .synchronizedSet(new HashSet<PlayerCharacter>());
 
   private static final Ticker TICKER = new Ticker();
 
@@ -182,7 +182,7 @@ public class Core {
   }
 
   public static void teleportCharacterTo(final Character character,
-            final Class<? extends Room> roomClass) {
+      final Class<? extends Room> roomClass) {
     final Room room = getRoomInstance(roomClass);
     character.getCurrentRoom().teleportAway(character);
     room.teleportInto(character);
@@ -213,8 +213,7 @@ public class Core {
     if (roomInstance != null) {
       return roomInstance;
     } else {
-      throw new IllegalStateException(roomClass
-                    + " has not been instantiated!");
+      throw new IllegalStateException(roomClass + " has not been instantiated!");
     }
   }
 
@@ -230,11 +229,11 @@ public class Core {
   }
 
   public static void move(final PlayerCharacter player,
-            final Direction direction) {
+      final Direction direction) {
     final Room oldRoom = player.getCurrentRoom();
 
-    final boolean directionIsAccessible = oldRoom.checkAccessibility(
-                direction, player);
+    final boolean directionIsAccessible = oldRoom.checkAccessibility(direction,
+        player);
     final boolean mayLeave = oldRoom.checkMayLeave(direction, player);
 
     if (directionIsAccessible && mayLeave) {
@@ -244,8 +243,9 @@ public class Core {
       if (mayEnter) {
         oldRoom.remove(player);
         output(oldRoom, player + " leaves " + direction + ".");
-        output(newRoom, player + " enters from "
-                        + Direction.oppositeDirection(direction) + ".");
+        output(newRoom,
+            player + " enters from " + Direction.oppositeDirection(direction)
+                + ".");
         newRoom.add(player);
         output(player, "You walk " + direction + ".");
         player.look();
@@ -255,16 +255,14 @@ public class Core {
 
   public static void bootstrap() {
     if (!TICKER.running) {
+      // @formatter:off
       BLACKBOARD.register(OutputListener.class, OutputEvent.class);
-      BLACKBOARD.register(PlayerLoginListener.class,
-                    PlayerLoginEvent.class);
-      BLACKBOARD.register(PlayerLogoutListener.class,
-                    PlayerLogoutEvent.class);
-      BLACKBOARD
-                    .register(WorldResetListener.class, WorldResetEvent.class);
+      BLACKBOARD.register(PlayerLoginListener.class, PlayerLoginEvent.class);
+      BLACKBOARD.register(PlayerLogoutListener.class, PlayerLogoutEvent.class);
+      BLACKBOARD.register(WorldResetListener.class, WorldResetEvent.class);
       BLACKBOARD.register(WorldTickListener.class, WorldTickEvent.class);
-      BLACKBOARD
-                    .register(CombatTickListener.class, CombatTickEvent.class);
+      BLACKBOARD.register(CombatTickListener.class, CombatTickEvent.class);
+      // @formatter:on
 
       initRoomInstances();
       resetAllRooms();
@@ -274,7 +272,7 @@ public class Core {
   }
 
   public static void look(final String argument, final Room currentRoom,
-            final PlayerCharacter lookingPlayer) {
+      final PlayerCharacter lookingPlayer) {
     if (argument == null || argument.isEmpty()) {
       lookingPlayer.look();
     } else if (Util.is(argument, "n", "north")) {

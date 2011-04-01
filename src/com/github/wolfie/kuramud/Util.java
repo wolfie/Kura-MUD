@@ -45,36 +45,38 @@ public class Util {
       return false;
     }
   }
-  
+
   /**
    * This method converts all arguments of a command into a string.
    * <p/>
-   * The first element in <code>argv</code> is ignored, others are concatenated with a space character in between.
+   * The first element in <code>argv</code> is ignored, others are concatenated
+   * with a space character in between.
    * 
-   * @param argv The argv argument, usually from <code>Console</code>
+   * @param argv
+   *          The argv argument, usually from <code>Console</code>
    * @return A concatenated String of <code>argv</code>
    */
   public static final String argvToString(final String[] argv) {
     final StringBuilder arguments = new StringBuilder();
-    	if (argv != null && argv.length > 0) {
-    		for (int i = 1; i < argv.length; i++) {
-    			arguments.append(argv[i]);
-    			arguments.append(" ");
-    		}
-    	}
-   	return arguments.toString();
+    if (argv != null && argv.length > 0) {
+      for (int i = 1; i < argv.length; i++) {
+        arguments.append(argv[i]);
+        arguments.append(" ");
+      }
+    }
+    return arguments.toString();
   }
-  
-	public static String join(Iterable<?> set, String joiner) {
-		final StringBuilder sb = new StringBuilder();
-		final Iterator<?> i = set.iterator();
-		while (i.hasNext()) {
-			sb.append(i.next());
-			if (i.hasNext()) {
-				sb.append(joiner);
-			}
-		}
-		return sb.toString();
-	}
+
+  public static String join(final Iterable<?> set, final String joiner) {
+    final StringBuilder sb = new StringBuilder();
+    final Iterator<?> i = set.iterator();
+    while (i.hasNext()) {
+      sb.append(i.next());
+      if (i.hasNext()) {
+        sb.append(joiner);
+      }
+    }
+    return sb.toString();
+  }
 
 }
