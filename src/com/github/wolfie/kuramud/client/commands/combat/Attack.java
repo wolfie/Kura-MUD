@@ -19,8 +19,14 @@ public class Attack implements Command {
   @Override
   public Object execute(final Console console, final String[] argv)
       throws Exception {
-    final String arguments = Util.argvToString(argv);
-    player.attack(arguments);
+
+    if (argv.length > 0) {
+      final String arguments = Util.argvToString(argv);
+      player.attack(arguments);
+    } else {
+      player.output("Who do you want to attack?");
+    }
+
     return null;
   }
 
