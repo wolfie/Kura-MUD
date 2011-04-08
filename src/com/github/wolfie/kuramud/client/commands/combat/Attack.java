@@ -20,7 +20,7 @@ public class Attack implements Command {
   public Object execute(final Console console, final String[] argv)
       throws Exception {
 
-    if (argv.length > 0) {
+    if (argv.length > 1) {
       final String arguments = Util.argvToString(argv);
       player.attack(arguments);
     } else {
