@@ -4,12 +4,20 @@ import java.util.Collections;
 import java.util.List;
 
 import com.github.wolfie.kuramud.server.Displayable;
+import com.github.wolfie.kuramud.server.Targetables;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 
 public abstract class ItemContainer {
+
+  public interface PeekFindings {
+    String getItemDescription();
+
+    int getAmount();
+  }
+
   private final int totalCapacity;
   private int usedCapacity = 0;
   private final Multiset<Item> items = HashMultiset.create();
@@ -77,5 +85,49 @@ public abstract class ItemContainer {
       sb.append(items.count(item) + " * " + item.getShortDescription() + '\n');
     }
     return sb.toString();
+  }
+
+  /**
+   * Try to find an item matching the given keyword argument.
+   * 
+   * @param argument
+   *          The argument to match for
+   * @return A {@link PeekFindings} instance of the found thing in the
+   *         <code>ItemContainer</code>. <code>null</code> will be returned, if
+   *         no matches were found.
+   */
+  public PeekFindings peek(final String argument) {
+    // TODO: optimization opportunity.
+
+    int matchedAmount = 0;
+    String matchedDescription = null;
+
+    for (final Item item : items) {
+      if (Targetables.matches(argument, item)) {
+        matchedDescription = item.getLongDescription();
+        matchedAmount++;
+      }
+    }
+
+    if (matchedDescription != null) {
+      final String finalMatchedDescription = matchedDescription;
+      final int finalMatchedAmount = matchedAmount;
+
+      return new PeekFindings() {
+        @Override
+        public int getAmount() {
+          return finalMatchedAmount;
+        }
+
+        @Override
+        public String getItemDescription() {
+          return finalMatchedDescription;
+        }
+      };
+    }
+
+    else {
+      return null;
+    }
   }
 }

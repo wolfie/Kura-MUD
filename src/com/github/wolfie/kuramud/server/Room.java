@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentMap;
 import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
 import com.github.wolfie.kuramud.server.item.Item;
+import com.github.wolfie.kuramud.server.item.ItemContainer.PeekFindings;
 import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
 import com.github.wolfie.kuramud.server.item.RoomItemContainer;
 import com.google.common.base.Joiner;
@@ -26,8 +27,8 @@ public abstract class Room implements WorldResetListener, WorldTickListener,
   private final Paths paths;
   private final Set<PlayerCharacter> playersInRoom = Collections.synchronizedSet(new HashSet<PlayerCharacter>());
   private final RoomItemContainer items = new RoomItemContainer();
-
   // @formatter:on
+
   /**
    * A map of mob keywords to the instances of the mobs.
    * <p/>
@@ -305,14 +306,41 @@ public abstract class Room implements WorldResetListener, WorldTickListener,
   }
 
   public void look(final String argument, final PlayerCharacter lookingPlayer) {
+
+    final boolean mobsSuccess = lookMobs(argument, lookingPlayer);
+    final boolean itemsSuccess = lookItems(argument, lookingPlayer);
+
+    if (!mobsSuccess && !itemsSuccess) {
+      lookingPlayer.output("You can't find it.");
+    }
+  }
+
+  private boolean lookMobs(final String argument,
+      final PlayerCharacter lookingPlayer) {
     final List<NonPlayerCharacter> mobs = this.mobs.get(argument);
     if (mobs != null && !mobs.isEmpty()) {
       lookingPlayer.output(mobs.get(0).getLongDescription());
       if (mobs.size() > 1) {
         lookingPlayer.output("There's " + mobs.size() + " of them here.");
       }
+      return true;
+    }
+
+    return false;
+  }
+
+  private boolean lookItems(final String argument,
+      final PlayerCharacter lookingPlayer) {
+    final PeekFindings findings = items.peek(argument);
+
+    if (findings != null) {
+      lookingPlayer.output(findings.getItemDescription());
+      if (findings.getAmount() > 1) {
+        lookingPlayer.output("You see " + findings.getAmount() + " of them.");
+      }
+      return true;
     } else {
-      lookingPlayer.output("You can't find it.");
+      return false;
     }
   }
 
