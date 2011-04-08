@@ -134,4 +134,8 @@ public abstract class Character implements Displayable, Targetable {
   public void remove(final Item item) throws ItemNotInContainerException {
     inventory.remove(item);
   }
+
+  public String getInventoryString() {
+    return inventory.toString();
+  }
 }

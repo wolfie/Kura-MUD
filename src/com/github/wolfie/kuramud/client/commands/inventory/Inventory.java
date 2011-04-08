@@ -16,7 +16,7 @@ public class Inventory implements Command {
   @Override
   public Object execute(final Console console, final String[] argv)
       throws Exception {
-    player.output("Can't see your inventory just yet");
+    player.output(player.getInventoryString());
     return null;
   }
 

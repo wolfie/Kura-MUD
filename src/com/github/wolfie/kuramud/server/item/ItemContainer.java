@@ -61,6 +61,10 @@ public abstract class ItemContainer {
    */
   @Override
   public String toString() {
+    if (items.isEmpty()) {
+      return "It's empty";
+    }
+
     final List<Item> itemTypes = Lists.newLinkedList();
     for (final Entry<Item> entry : items.entrySet()) {
       itemTypes.add(entry.getElement());
