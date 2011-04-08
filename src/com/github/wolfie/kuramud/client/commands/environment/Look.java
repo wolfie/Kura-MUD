@@ -3,6 +3,7 @@ package com.github.wolfie.kuramud.client.commands.environment;
 import org.vaadin.console.Console;
 import org.vaadin.console.Console.Command;
 
+import com.github.wolfie.kuramud.Util;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 
 public class Look implements Command {
@@ -18,7 +19,11 @@ public class Look implements Command {
   @Override
   public Object execute(final Console console, final String[] argv)
       throws Exception {
-    player.look();
+    if (argv.length == 1) {
+      player.look();
+    } else {
+      player.look(Util.argvToString(argv));
+    }
     return null;
   }
 
