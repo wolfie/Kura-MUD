@@ -2,7 +2,6 @@ package com.github.wolfie.kuramud;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -57,26 +56,6 @@ public class Util {
    * @return A concatenated String of <code>argv</code>
    */
   public static final String argvToString(final String[] argv) {
-    final StringBuilder arguments = new StringBuilder();
-    if (argv != null && argv.length > 0) {
-      for (int i = 1; i < argv.length; i++) {
-        arguments.append(argv[i]);
-        arguments.append(" ");
-      }
-    }
-    return arguments.toString();
+    return Joiner.on(" ").join(Arrays.copyOfRange(argv, 1, argv.length));
   }
-
-  public static String join(final Iterable<?> set, final String joiner) {
-    final StringBuilder sb = new StringBuilder();
-    final Iterator<?> i = set.iterator();
-    while (i.hasNext()) {
-      sb.append(i.next());
-      if (i.hasNext()) {
-        sb.append(joiner);
-      }
-    }
-    return sb.toString();
-  }
-
 }

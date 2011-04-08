@@ -18,6 +18,7 @@ import com.github.wolfie.kuramud.server.Core;
 import com.github.wolfie.kuramud.server.PlayerCharacter;
 import com.github.wolfie.kuramud.server.Room;
 import com.github.wolfie.kuramud.server.blackboard.OutputListener;
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.vaadin.Application;
 import com.vaadin.ui.Label;
@@ -67,13 +68,12 @@ public class KuramudApplication extends Application implements OutputListener {
       sb.append("Available commands:\n");
 
       for (final Command commandObject : groupedCommands.keySet()) {
-        final String joinedCommands = Util.join(
-            groupedCommands.get(commandObject), ", ");
+        final String joinedCommands = Joiner.on(", ").join(
+            groupedCommands.get(commandObject));
         sb.append(joinedCommands + "\n");
       }
       return sb.toString();
     }
-
   }
 
   public class MyCloseListener implements CloseListener {
