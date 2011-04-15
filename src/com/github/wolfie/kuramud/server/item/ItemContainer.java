@@ -1,5 +1,6 @@
 package com.github.wolfie.kuramud.server.item;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -48,11 +49,11 @@ public abstract class ItemContainer {
     }
   }
 
-  public void remove(final Item item) throws ItemNotInContainerException {
+  public void remove(final Item item) throws NoSuchItemException {
     final boolean success = items.remove(item);
 
     if (!success) {
-      throw new ItemNotInContainerException(this, item);
+      throw new NoSuchItemException(this, item);
     }
   }
 
@@ -96,38 +97,49 @@ public abstract class ItemContainer {
    *         <code>ItemContainer</code>. <code>null</code> will be returned, if
    *         no matches were found.
    */
-  public PeekFindings peek(final String argument) {
+  public PeekFindings peek(final String target) {
     // TODO: optimization opportunity.
 
-    int matchedAmount = 0;
-    String matchedDescription = null;
+    final Collection<Item> items = getItems(target);
 
-    for (final Item item : items) {
-      if (Targetables.matches(argument, item)) {
-        matchedDescription = item.getLongDescription();
-        matchedAmount++;
-      }
-    }
-
-    if (matchedDescription != null) {
-      final String finalMatchedDescription = matchedDescription;
-      final int finalMatchedAmount = matchedAmount;
-
+    if (!items.isEmpty()) {
+      final int amount = items.size();
+      final String desc = items.iterator().next().getLongDescription();
       return new PeekFindings() {
         @Override
         public int getAmount() {
-          return finalMatchedAmount;
+          return amount;
         }
 
         @Override
         public String getItemDescription() {
-          return finalMatchedDescription;
+          return desc;
         }
       };
-    }
-
-    else {
+    } else {
       return null;
     }
+  }
+
+  public Item removeItem(final String target) throws NoSuchItemException {
+    final Collection<Item> items = getItems(target);
+    Item item = null;
+    if (!items.isEmpty()) {
+      item = items.iterator().next();
+      remove(item);
+      return item;
+    } else {
+      throw new NoSuchItemException(this, target);
+    }
+  }
+
+  private Collection<Item> getItems(final String target) {
+    final Multiset<Item> results = HashMultiset.create();
+    for (final Item item : items) {
+      if (Targetables.matches(target, item)) {
+        results.add(item);
+      }
+    }
+    return results;
   }
 }

@@ -2,7 +2,7 @@ package com.github.wolfie.kuramud.server;
 
 import com.github.wolfie.kuramud.server.item.CharacterInventory;
 import com.github.wolfie.kuramud.server.item.Item;
-import com.github.wolfie.kuramud.server.item.ItemNotInContainerException;
+import com.github.wolfie.kuramud.server.item.NoSuchItemException;
 import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
 
 public abstract class Character implements Displayable, Targetable {
@@ -131,8 +131,12 @@ public abstract class Character implements Displayable, Targetable {
     inventory.put(item);
   }
 
-  public void remove(final Item item) throws ItemNotInContainerException {
+  public void remove(final Item item) throws NoSuchItemException {
     inventory.remove(item);
+  }
+
+  public Item removeItem(final String target) throws NoSuchItemException {
+    return inventory.removeItem(target);
   }
 
   public String getInventoryString() {

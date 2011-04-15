@@ -26,6 +26,9 @@ import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldResetListener.WorldResetEvent;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener.WorldTickEvent;
+import com.github.wolfie.kuramud.server.item.Item;
+import com.github.wolfie.kuramud.server.item.NoSuchItemException;
+import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
 import com.google.common.collect.Sets;
 
 public class Core {
@@ -300,5 +303,25 @@ public class Core {
   public static void remove(final Combat combat) {
     COMBATS.remove(combat);
     BLACKBOARD.removeListener(combat);
+  }
+
+  public static void pickUp(final Character character, final String target)
+      throws OutOfCapacityException, NoSuchItemException {
+    final Room room = character.getCurrentRoom();
+    final Item item = room.removeItem(target);
+    character.receive(item);
+    character.output("You picked up " + item.getShortDescription());
+    room.output(character.getShortDescription() + " picked up "
+        + item.getShortDescription());
+  }
+
+  public static void drop(final Character character, final String target)
+      throws NoSuchItemException, OutOfCapacityException {
+    final Item item = character.removeItem(target);
+    final Room room = character.getCurrentRoom();
+    room.add(item);
+    character.output("You dropped " + item.getShortDescription());
+    room.output(character.getShortDescription() + " dropped "
+        + item.getShortDescription());
   }
 }

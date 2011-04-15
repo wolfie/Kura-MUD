@@ -13,6 +13,7 @@ import com.github.wolfie.kuramud.server.blackboard.WorldResetListener;
 import com.github.wolfie.kuramud.server.blackboard.WorldTickListener;
 import com.github.wolfie.kuramud.server.item.Item;
 import com.github.wolfie.kuramud.server.item.ItemContainer.PeekFindings;
+import com.github.wolfie.kuramud.server.item.NoSuchItemException;
 import com.github.wolfie.kuramud.server.item.OutOfCapacityException;
 import com.github.wolfie.kuramud.server.item.RoomItemContainer;
 import com.google.common.base.Joiner;
@@ -369,5 +370,13 @@ public abstract class Room implements WorldResetListener, WorldTickListener,
 
   protected Set<PlayerCharacter> getPlayersInRoom() {
     return Collections.unmodifiableSet(playersInRoom);
+  }
+
+  public Item removeItem(final String target) throws NoSuchItemException {
+    return items.removeItem(target);
+  }
+
+  public void add(final Item item) throws OutOfCapacityException {
+    items.put(item);
   }
 }
